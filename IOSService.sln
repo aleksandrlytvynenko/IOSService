@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IOSService", "IOSService\IOSService.csproj", "{7960466F-DE07-44D9-B4B6-B3956C788FC5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintClient", "PrintClient\PrintClient.csproj", "{829A80B7-DFC2-47EB-934D-D89064D331EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|iPhoneSimulator = Debug|iPhoneSimulator
@@ -19,5 +21,13 @@ Global
 		{7960466F-DE07-44D9-B4B6-B3956C788FC5}.Release|iPhone.Build.0 = Release|iPhone
 		{7960466F-DE07-44D9-B4B6-B3956C788FC5}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
 		{7960466F-DE07-44D9-B4B6-B3956C788FC5}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Debug|iPhone.Build.0 = Debug|iPhone
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Release|iPhone.ActiveCfg = Release|iPhone
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Release|iPhone.Build.0 = Release|iPhone
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{829A80B7-DFC2-47EB-934D-D89064D331EC}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
 	EndGlobalSection
 EndGlobal
