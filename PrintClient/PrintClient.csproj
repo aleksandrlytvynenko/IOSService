@@ -25,8 +25,9 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchFastDev>true</MtouchFastDev>
     <MtouchDebug>true</MtouchDebug>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Developer: DENIS GORSHKOV (46GW3D2TBR)</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignProvision>bc7f2f05-3e4a-4328-91c3-94ac58b267c9</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>

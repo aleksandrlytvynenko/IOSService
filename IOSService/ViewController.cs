@@ -9,11 +9,20 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.IO;
 using System.Text;
+using AVFoundation;
+using Foundation;
+using CoreMedia;
 
 namespace IOSService
 {
 	public partial class ViewController : UIViewController
 	{
+		AVPlayer _player;
+		AVPlayerLayer _playerLayer;
+		AVAsset _asset;
+		AVPlayerItem _playerItem;
+		NSObject videoEndNotificationToken;
+
 		HttpListener listener;
 		public ViewController (IntPtr handle) : base (handle)
 		{
@@ -23,6 +32,20 @@ namespace IOSService
 		{
 			base.ViewDidLoad ();
 
+			_asset = AVAsset.FromUrl (NSUrl.FromFilename ("test.mp3"));
+			_playerItem = new AVPlayerItem (_asset);   
+
+			_player = new AVPlayer (_playerItem); 
+			_player.Muted = true;
+
+			_playerLayer = AVPlayerLayer.FromPlayer (_player);
+			_playerLayer.Frame = View.Frame;
+
+			View.Layer.AddSublayer (_playerLayer);
+
+			_player.Play ();
+			_player.ActionAtItemEnd = AVPlayerActionAtItemEnd.None;
+			videoEndNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, VideoDidFinishPlaying, _playerItem);
 			var myIpLabel = new UILabel (new CGRect(50,50,250,200)){Lines = 0};
 			foreach (var netInterface in NetworkInterface.GetAllNetworkInterfaces()) {
 				if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
@@ -41,6 +64,7 @@ namespace IOSService
 			listener = new HttpListener();
 			listener.Prefixes.Add("http://*:8080/");
 			listener.Start();
+
 			Console.WriteLine("Listening...");
 			Task.Factory.StartNew (() => {
 				for (;;) {
@@ -48,12 +72,49 @@ namespace IOSService
 					new Thread (new Worker (ctx).ProcessRequest).Start ();
 				}
 			});
+			PrintWiFi ("HELLO");
+
+		}
+		private void PrintWiFi(string text)
+		{
+			var printInfo = UIPrintInfo.PrintInfo;
+			printInfo.OutputType = UIPrintInfoOutputType.General;
+			printInfo.JobName = "My first Print Job";
+
+			var textFormatter = new UISimpleTextPrintFormatter (text) {
+				StartPage = 0,
+				ContentInsets = new UIEdgeInsets (72, 72, 72, 72),
+				MaximumContentWidth = 6 * 72,
+			};
+
+			var printer = UIPrintInteractionController.SharedPrintController;
+			printer.PrintInfo = printInfo;
+			printer.PrintFormatter = textFormatter;
+			//			printer.ShowsPageRange = true;
+			//			printer.Present (true, (handler, completed, err) => {
+			//				if (!completed && err != null) {
+			//					Console.WriteLine ("error");
+			//				}
+			//			});
+			var defaultPrinter = new UIPrinterPickerControllerWrapper ().SelectedPrinter;
+			printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
+			//SendResponce ("printed");
+		}
+
+		private void VideoDidFinishPlaying(NSNotification obj)
+		{
+			Console.WriteLine("Video Finished, will now restart");
+			_player.Seek (new CMTime (0, 1));
 		}
 
 		public override void DidReceiveMemoryWarning ()
 		{
 			base.DidReceiveMemoryWarning ();
 			// Release any cached data, images, etc that aren't in use.
+		}
+		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
+		{
+
 		}
 
 	}
@@ -79,12 +140,65 @@ namespace IOSService
 				Console.WriteLine(text);
 				MakesUppercase (text);
 			}
+			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/PrintWiFi") {
+				string text;
+				using (var reader = new StreamReader(context.Request.InputStream,
+					context.Request.ContentEncoding))
+				{
+					text = reader.ReadToEnd();
+				}
+				Console.WriteLine(text);
+				using (var pool = new NSAutoreleasePool ()) {
+					try{
+						pool.InvokeOnMainThread(delegate {
+							PrintWiFi(text);
+						});
+					}
+					catch {
+
+					}
+				}
+
+			}
+
 		}
 
 		private void MakesUppercase(string text)
 		{
 			SendResponce (text.ToUpper());
 		}
+
+		private void PrintWiFi(string text)
+		{
+			var printInfo = UIPrintInfo.PrintInfo;
+			printInfo.OutputType = UIPrintInfoOutputType.General;
+			printInfo.JobName = "My first Print Job";
+
+			var textFormatter = new UISimpleTextPrintFormatter (text) {
+				StartPage = 0,
+				ContentInsets = new UIEdgeInsets (72, 72, 72, 72),
+				MaximumContentWidth = 6 * 72,
+			};
+
+			var printer = UIPrintInteractionController.SharedPrintController;
+			printer.PrintInfo = printInfo;
+			printer.PrintFormatter = textFormatter;
+//			printer.ShowsPageRange = true;
+//			printer.Present (true, (handler, completed, err) => {
+//				if (!completed && err != null) {
+//					Console.WriteLine ("error");
+//				}
+//			});
+			var defaultPrinter = new UIPrinterPickerControllerWrapper ().SelectedPrinter;
+			printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
+			SendResponce ("printed");
+		}
+
+		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
+		{
+
+		}
+
 
 		private void SendResponce(string responce)
 		{
@@ -93,6 +207,14 @@ namespace IOSService
 			context.Response.OutputStream.Write(b, 0, b.Length);
 			context.Response.OutputStream.Close();
 
+		}
+	}
+
+	public class UIPrinterPickerControllerWrapper : UIPrinterPickerController
+	{
+		public UIPrinterPickerControllerWrapper () : base(NSObjectFlag.Empty)
+		{
+			
 		}
 	}
 }
