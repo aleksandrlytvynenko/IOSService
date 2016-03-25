@@ -48,7 +48,7 @@ namespace IOSService
 
 			_player.Play ();
 			_player.ActionAtItemEnd = AVPlayerActionAtItemEnd.None;
-			videoEndNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, VideoDidFinishPlaying, _playerItem);
+			videoEndNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, AudioDidFinishPlaying, _playerItem);
 			var myIpLabel = new UILabel (new CGRect(50,50,250,200)){Lines = 0};
 			foreach (var netInterface in NetworkInterface.GetAllNetworkInterfaces()) {
 				if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
@@ -75,24 +75,24 @@ namespace IOSService
 					new Thread (new Worker (ctx, printerURL).ProcessRequest).Start ();
 				}
 			});
-			PrintWiFi ("HELLO");
+			SetupDefaultWiFiPrinter (null);
 
 		}
-		private void PrintWiFi(string text)
+		private void SetupDefaultWiFiPrinter(string text)
 		{
-			var printInfo = UIPrintInfo.PrintInfo;
-			printInfo.OutputType = UIPrintInfoOutputType.General;
-			printInfo.JobName = "My first Print Job";
+//			var printInfo = UIPrintInfo.PrintInfo;
+//			printInfo.OutputType = UIPrintInfoOutputType.General;
+//			printInfo.JobName = "My first Print Job";
+//
+//			var textFormatter = new UISimpleTextPrintFormatter (text) {
+//				StartPage = 0,
+//				ContentInsets = new UIEdgeInsets (72, 72, 72, 72),
+//				MaximumContentWidth = 6 * 72,
+//			};
 
-			var textFormatter = new UISimpleTextPrintFormatter (text) {
-				StartPage = 0,
-				ContentInsets = new UIEdgeInsets (72, 72, 72, 72),
-				MaximumContentWidth = 6 * 72,
-			};
-
-			var printer = UIPrintInteractionController.SharedPrintController;
-			printer.PrintInfo = printInfo;
-			printer.PrintFormatter = textFormatter;
+//			var printer = UIPrintInteractionController.SharedPrintController;
+//			printer.PrintInfo = printInfo;
+//			printer.PrintFormatter = textFormatter;
 
 			controller = new UIPrinterPickerControllerWrapper ();
 			controller.Delegate = new UIPrinterPickerControllerDelegate();
@@ -101,13 +101,11 @@ namespace IOSService
 			if (defaultPrinter == null) {
 				controller.Present (true, UIPrintInteractionCompletionHan);
 			}
-			//printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
-			//SendResponce ("printed");
 		}
 
-		private void VideoDidFinishPlaying(NSNotification obj)
+		private void AudioDidFinishPlaying(NSNotification obj)
 		{
-			Console.WriteLine("Video Finished, will now restart");
+			Console.WriteLine("Audio Finished, will now restart");
 			_player.Seek (new CMTime (0, 1));
 		}
 
@@ -119,11 +117,7 @@ namespace IOSService
 		void UIPrintInteractionCompletionHan (UIPrinterPickerController printInteractionController,Boolean completed,NSError error)
 		{
 			printerSelected = completed;
-			printerURL = controller.SelectedPrinter.Url;
-		}
-		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
-		{
-			printerSelected = completed;
+			if(completed)
 			printerURL = controller.SelectedPrinter.Url;
 		}
 
@@ -194,20 +188,22 @@ namespace IOSService
 			var printer = UIPrintInteractionController.SharedPrintController;
 			printer.PrintInfo = printInfo;
 			printer.PrintFormatter = textFormatter;
-//			printer.ShowsPageRange = true;
-//			printer.Present (true, (handler, completed, err) => {
-//				if (!completed && err != null) {
-//					Console.WriteLine ("error");
-//				}
-//			});
-			var defaultPrinter = UIPrinter.FromUrl(printerUrl);
-			printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
-			SendResponce ("printed");
+			if (printerUrl != null) {
+				var defaultPrinter = UIPrinter.FromUrl (printerUrl);
+				if (defaultPrinter != null) {
+					printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
+
+				}
+			}
 		}
 
 		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
 		{
-			
+			if(completed)
+				SendResponce ("Printed");
+			else
+				SendResponce ("PrintError");
+
 		}
 
 
