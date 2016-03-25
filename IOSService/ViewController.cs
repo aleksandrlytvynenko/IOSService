@@ -12,6 +12,8 @@ using System.Text;
 using AVFoundation;
 using Foundation;
 using CoreMedia;
+using ExternalAccessory;
+using System.Linq;
 
 namespace IOSService
 {
@@ -95,11 +97,13 @@ namespace IOSService
 //			printer.PrintFormatter = textFormatter;
 
 			controller = new UIPrinterPickerControllerWrapper ();
-			controller.Delegate = new UIPrinterPickerControllerDelegate();
+			if (controller != null) {
+				controller.Delegate = new UIPrinterPickerControllerDelegate ();
 
-			var defaultPrinter = controller.SelectedPrinter;
-			if (defaultPrinter == null) {
-				controller.Present (true, UIPrintInteractionCompletionHan);
+				var defaultPrinter = controller.SelectedPrinter;
+				if (defaultPrinter == null) {
+					controller.Present (true, UIPrintInteractionCompletionHan);
+				}
 			}
 		}
 
@@ -165,7 +169,50 @@ namespace IOSService
 				}
 
 			}
+			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/PrintBT") {
+				string text;
+				using (var reader = new StreamReader(context.Request.InputStream,
+					context.Request.ContentEncoding))
+				{
+					text = reader.ReadToEnd();
+				}
+				Console.WriteLine(text);
+				using (var pool = new NSAutoreleasePool ()) {
+					try{
+						pool.InvokeOnMainThread(delegate {
+							PrintBT(text);
+						});
+					}
+					catch {
 
+					}
+				}
+
+			}
+
+
+		}
+
+		private void PrintBT(string text)
+		{
+			var manager = EAAccessoryManager.SharedAccessoryManager;
+			var starPrinter = manager.ConnectedAccessories.FirstOrDefault (p => p.Name.IndexOf ("Star") >= 0); // this does find the EAAccessory correctly
+
+			var session = new EASession (starPrinter, starPrinter.ProtocolStrings [0]); // the second parameter resolves to "jp.star-m.starpro"
+			session.OutputStream.Schedule (NSRunLoop.Current, "kCFRunLoopDefaultMode"); 
+			session.OutputStream.Open ();
+
+			byte[] toSend = Encoding.UTF8.GetBytes("something");
+
+			if (session.OutputStream.HasSpaceAvailable()) {
+				nint bytesWritten = session.OutputStream.Write (toSend, 0, (nuint)toSend.Length);  
+				if (bytesWritten < 0) { 
+					System.Diagnostics.Debug.WriteLine ("ERROR WRITING DATA"); 
+				} else {
+					System.Diagnostics.Debug.WriteLine("Some data written, ignoring the rest, just a test");
+				} 
+			} else
+				System.Diagnostics.Debug.WriteLine ("NO SPACE"); // THIS ALWAYS PRINTS, the output stream is never ready to take any output
 		}
 
 		private void MakesUppercase(string text)

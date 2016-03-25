@@ -11,6 +11,7 @@ namespace PrintClient
 	{
 		string _makeUppercase = "/MakesUppercase";
 		string _printWifi = "/PrintWiFi";
+		string _printBT = "/PrintBT";
 		public ViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -24,9 +25,9 @@ namespace PrintClient
 			_btPrint.TouchUpInside += BtPrintTouchUpInside;
 		}
 
-		void BtPrintTouchUpInside (object sender, EventArgs e)
+		async void BtPrintTouchUpInside (object sender, EventArgs e)
 		{
-			
+			_outputLabel.Text = await CallServer (_printWifi + _printBT, new StringContent(_inputField.Text));
 		}
 
 		async void WifiButtonTouchUpInside (object sender, EventArgs e)
