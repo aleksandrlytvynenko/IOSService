@@ -39,8 +39,9 @@
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <MtouchFloat32>true</MtouchFloat32>
     <MtouchUseSGen>true</MtouchUseSGen>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Distribution: DIATOM ENTERPRISES SIA (R85LWMKMRN)</CodesignKey>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignProvision>770c2089-a016-495d-a11c-bc9599bc82da</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>
@@ -101,4 +102,9 @@
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
+  <ItemGroup>
+    <Content Include="sample.m4v" />
+    <Content Include="test.mp3" />
+    <Content Include="test2.mp3" />
+  </ItemGroup>
 </Project>

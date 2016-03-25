@@ -81,7 +81,7 @@
                         <outlet property="_inputField" destination="2MN-Pa-P03" id="name-outlet-2MN-Pa-P03"/>
                         <outlet property="_outputLabel" destination="hYh-jv-CB4" id="name-outlet-hYh-jv-CB4"/>
                         <outlet property="_upperCaseButton" destination="wZ9-Sp-U7b" id="name-outlet-wZ9-Sp-U7b"/>
-                        <outlet property="_wifiButton" destination="xjN-QA-f6N" id="name-outlet-xjN-QA-f6N"/>
+                        <outlet property="_wifiPrint" destination="xjN-QA-f6N" id="name-outlet-xjN-QA-f6N"/>
                         <outlet property="_btPrint" destination="Xjd-bp-Xna" id="name-outlet-Xjd-bp-Xna"/>
                     </connections>
                 </viewController>

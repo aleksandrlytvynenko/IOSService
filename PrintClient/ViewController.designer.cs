@@ -36,7 +36,7 @@ namespace PrintClient
 
 		[Outlet]
 		[GeneratedCode ("iOS Designer", "1.0")]
-		UIButton _wifiButton { get; set; }
+		UIButton _wifiPrint { get; set; }
 
 		void ReleaseDesignerOutlets ()
 		{
@@ -60,9 +60,9 @@ namespace PrintClient
 				_upperCaseButton.Dispose ();
 				_upperCaseButton = null;
 			}
-			if (_wifiButton != null) {
-				_wifiButton.Dispose ();
-				_wifiButton = null;
+			if (_wifiPrint != null) {
+				_wifiPrint.Dispose ();
+				_wifiPrint = null;
 			}
 		}
 	}

@@ -22,6 +22,9 @@ namespace IOSService
 		AVAsset _asset;
 		AVPlayerItem _playerItem;
 		NSObject videoEndNotificationToken;
+		bool printerSelected;
+		UIPrinterPickerController controller;
+		NSUrl printerURL;
 
 		HttpListener listener;
 		public ViewController (IntPtr handle) : base (handle)
@@ -69,7 +72,7 @@ namespace IOSService
 			Task.Factory.StartNew (() => {
 				for (;;) {
 					HttpListenerContext ctx = listener.GetContext ();
-					new Thread (new Worker (ctx).ProcessRequest).Start ();
+					new Thread (new Worker (ctx, printerURL).ProcessRequest).Start ();
 				}
 			});
 			PrintWiFi ("HELLO");
@@ -90,14 +93,15 @@ namespace IOSService
 			var printer = UIPrintInteractionController.SharedPrintController;
 			printer.PrintInfo = printInfo;
 			printer.PrintFormatter = textFormatter;
-			//			printer.ShowsPageRange = true;
-			//			printer.Present (true, (handler, completed, err) => {
-			//				if (!completed && err != null) {
-			//					Console.WriteLine ("error");
-			//				}
-			//			});
-			var defaultPrinter = new UIPrinterPickerControllerWrapper ().SelectedPrinter;
-			printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
+
+			controller = new UIPrinterPickerControllerWrapper ();
+			controller.Delegate = new UIPrinterPickerControllerDelegate();
+
+			var defaultPrinter = controller.SelectedPrinter;
+			if (defaultPrinter == null) {
+				controller.Present (true, UIPrintInteractionCompletionHan);
+			}
+			//printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
 			//SendResponce ("printed");
 		}
 
@@ -112,19 +116,26 @@ namespace IOSService
 			base.DidReceiveMemoryWarning ();
 			// Release any cached data, images, etc that aren't in use.
 		}
+		void UIPrintInteractionCompletionHan (UIPrinterPickerController printInteractionController,Boolean completed,NSError error)
+		{
+			printerSelected = completed;
+			printerURL = controller.SelectedPrinter.Url;
+		}
 		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
 		{
-
+			printerSelected = completed;
+			printerURL = controller.SelectedPrinter.Url;
 		}
 
 	}
 	class Worker
 	{
 		private HttpListenerContext context;
-
-		public Worker(HttpListenerContext context)
+		NSUrl printerUrl;
+		public Worker(HttpListenerContext context, NSUrl printerUrl)
 		{
 			this.context = context;
+			this.printerUrl = printerUrl;
 		}
 
 		public void ProcessRequest()
@@ -189,14 +200,14 @@ namespace IOSService
 //					Console.WriteLine ("error");
 //				}
 //			});
-			var defaultPrinter = new UIPrinterPickerControllerWrapper ().SelectedPrinter;
+			var defaultPrinter = UIPrinter.FromUrl(printerUrl);
 			printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
 			SendResponce ("printed");
 		}
 
 		void UIPrintInteractionCompletionHandler (UIPrintInteractionController printInteractionController,Boolean completed,NSError error)
 		{
-
+			
 		}
 
 
