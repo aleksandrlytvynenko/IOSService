@@ -4,6 +4,7 @@ using UIKit;
 using System.Net.Http;
 using Foundation;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace PrintClient
 {
@@ -12,6 +13,17 @@ namespace PrintClient
 		string _makeUppercase = "/MakesUppercase";
 		string _printWifi = "/PrintWiFi";
 		string _printBT = "/PrintBT";
+
+
+		private void IsLoading (bool value)
+		{
+			if (value) {
+				_activityIndicator.StartAnimating ();
+			} else {
+				_activityIndicator.StopAnimating ();
+			}
+		}
+
 		public ViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -19,6 +31,7 @@ namespace PrintClient
 		public override void ViewDidLoad ()
 		{
 			base.ViewDidLoad ();
+			_activityIndicator.HidesWhenStopped = true;
 			_hostIpTextView.Text = "http://192.168.1.135:8080";
 			_upperCaseButton.TouchUpInside += UpperCaseButtonTouchUpInside;
 			_wifiPrint.TouchUpInside += WifiButtonTouchUpInside;
@@ -27,41 +40,39 @@ namespace PrintClient
 
 		async void BtPrintTouchUpInside (object sender, EventArgs e)
 		{
-			_outputLabel.Text = await CallServer (_printWifi + _printBT, new StringContent(_inputField.Text));
+			await CallServer (_hostIpTextView.Text + _printBT, new StringContent (_inputField.Text));
 		}
 
 		async void WifiButtonTouchUpInside (object sender, EventArgs e)
 		{
-			_outputLabel.Text = await CallServer (_printWifi + _printWifi, new StringContent(_inputField.Text));
+			await CallServer (_hostIpTextView.Text + _printWifi, new StringContent (_inputField.Text));
 		}
 
 		async void UpperCaseButtonTouchUpInside (object sender, EventArgs e)
 		{
-			_outputLabel.Text = await CallServer (_hostIpTextView.Text + _makeUppercase, new StringContent(_inputField.Text));
+			await CallServer (_hostIpTextView.Text + _makeUppercase, new StringContent (_inputField.Text));
 
 		}
-
-		private async Task<string> CallServer(string url, StringContent content)
+		private int _countOfRetry = 3;
+		private async Task CallServer (string url, StringContent content)
 		{
-			HttpResponseMessage result;
-			string resultString = "error";
-			using (HttpClientHandler handler = new HttpClientHandler())
-			{
-				using (HttpClient client = new HttpClient(handler))
-				{
-					try
-					{
-						result = await client.PostAsync(url , content);
-						resultString = await result.Content.ReadAsStringAsync();
+			for (int i = 0; i < _countOfRetry; i++) {
+				IsLoading (true);
+				HttpResponseMessage result;
+				string resultString = "error";
+				using (var client = new HttpClient (new HttpClientHandler ())) {
+					try {
+						result = await client.PostAsync (url, content);
+						resultString = await result.Content.ReadAsStringAsync ();
+						IsLoading (false);
+						_outputLabel.Text = resultString;
+						return;
 
-					}
-					catch
-					{
-
+					} catch (Exception e) {
+						resultString = e.Message;
 					}
 				}
 			}
-			return resultString;
 		}
 
 		public override void DidReceiveMemoryWarning ()
@@ -69,5 +80,7 @@ namespace PrintClient
 			base.DidReceiveMemoryWarning ();
 		}
 	}
+
+
 }
 

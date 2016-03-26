@@ -19,16 +19,12 @@ namespace IOSService
 {
 	public partial class ViewController : UIViewController
 	{
-		AVPlayer _player;
-		AVPlayerLayer _playerLayer;
-		AVAsset _asset;
-		AVPlayerItem _playerItem;
-		NSObject videoEndNotificationToken;
-		bool printerSelected;
-		UIPrinterPickerController controller;
-		NSUrl printerURL;
+		AVAudioPlayer _player;
+		NSUrl _asset;
+		UIPrinterPickerController _controller;
+		NSUrl _printerURL;
+		HttpListener _listener;
 
-		HttpListener listener;
 		public ViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -36,21 +32,26 @@ namespace IOSService
 		public override void ViewDidLoad ()
 		{
 			base.ViewDidLoad ();
+			InitPlayer ();
+			GetIP ();
+			InitListener ();
+			SetupDefaultWiFiPrinter ();
 
-			_asset = AVAsset.FromUrl (NSUrl.FromFilename ("test.mp3"));
-			_playerItem = new AVPlayerItem (_asset);   
-
-			_player = new AVPlayer (_playerItem); 
-			_player.Muted = true;
-
-			_playerLayer = AVPlayerLayer.FromPlayer (_player);
-			_playerLayer.Frame = View.Frame;
-
-			View.Layer.AddSublayer (_playerLayer);
-
+		}
+		void InitPlayer()
+		{
+			_asset = (NSUrl.FromFilename ("30.mp3"));
+			NSError err;
+			_player = new AVAudioPlayer (_asset, "mp3", out err); 
+			_player.NumberOfLoops = -1;
+			_player.Volume = 0;
 			_player.Play ();
-			_player.ActionAtItemEnd = AVPlayerActionAtItemEnd.None;
-			videoEndNotificationToken = NSNotificationCenter.DefaultCenter.AddObserver(AVPlayerItem.DidPlayToEndTimeNotification, AudioDidFinishPlaying, _playerItem);
+			_player.EndInterruption += PlayerEndInterruption; 
+			_player.BeginInterruption += PlayerBeginInterruption;
+		}
+
+		void GetIP()
+		{
 			var myIpLabel = new UILabel (new CGRect(50,50,250,200)){Lines = 0};
 			foreach (var netInterface in NetworkInterface.GetAllNetworkInterfaces()) {
 				if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
@@ -64,53 +65,49 @@ namespace IOSService
 					}
 				}  
 			}
-
 			this.View.AddSubview (myIpLabel);
-			listener = new HttpListener();
-			listener.Prefixes.Add("http://*:8080/");
-			listener.Start();
+
+		}
+
+		void PlayerBeginInterruption (object sender, EventArgs e)
+		{
+			_player.Pause ();
+			_listener.Stop ();
+			_listener.Close ();
+			_listener = null;
+		}
+
+		void PlayerEndInterruption (object sender, EventArgs e)
+		{
+			_player.Play ();
+			InitListener ();
+		}
+
+		private void InitListener()
+		{
+			_listener = new HttpListener();
+			_listener.Prefixes.Add("http://*:8080/");
+			_listener.Start();
 
 			Console.WriteLine("Listening...");
 			Task.Factory.StartNew (() => {
 				for (;;) {
-					HttpListenerContext ctx = listener.GetContext ();
-					new Thread (new Worker (ctx, printerURL).ProcessRequest).Start ();
+					HttpListenerContext ctx = _listener.GetContext ();
+					new Thread (new Worker (ctx, _printerURL).ProcessRequest).Start ();
 				}
 			});
-			SetupDefaultWiFiPrinter (null);
-
 		}
-		private void SetupDefaultWiFiPrinter(string text)
+		private void SetupDefaultWiFiPrinter()
 		{
-//			var printInfo = UIPrintInfo.PrintInfo;
-//			printInfo.OutputType = UIPrintInfoOutputType.General;
-//			printInfo.JobName = "My first Print Job";
-//
-//			var textFormatter = new UISimpleTextPrintFormatter (text) {
-//				StartPage = 0,
-//				ContentInsets = new UIEdgeInsets (72, 72, 72, 72),
-//				MaximumContentWidth = 6 * 72,
-//			};
+			_controller = new UIPrinterPickerControllerWrapper ();
+			if (_controller != null) {
+				_controller.Delegate = new UIPrinterPickerControllerDelegate ();
 
-//			var printer = UIPrintInteractionController.SharedPrintController;
-//			printer.PrintInfo = printInfo;
-//			printer.PrintFormatter = textFormatter;
-
-			controller = new UIPrinterPickerControllerWrapper ();
-			if (controller != null) {
-				controller.Delegate = new UIPrinterPickerControllerDelegate ();
-
-				var defaultPrinter = controller.SelectedPrinter;
+				var defaultPrinter = _controller.SelectedPrinter;
 				if (defaultPrinter == null) {
-					controller.Present (true, UIPrintInteractionCompletionHan);
+					_controller.Present (true, UIPrintInteractionCompletionHan);
 				}
 			}
-		}
-
-		private void AudioDidFinishPlaying(NSNotification obj)
-		{
-			Console.WriteLine("Audio Finished, will now restart");
-			_player.Seek (new CMTime (0, 1));
 		}
 
 		public override void DidReceiveMemoryWarning ()
@@ -120,9 +117,8 @@ namespace IOSService
 		}
 		void UIPrintInteractionCompletionHan (UIPrinterPickerController printInteractionController,Boolean completed,NSError error)
 		{
-			printerSelected = completed;
-			if(completed)
-			printerURL = controller.SelectedPrinter.Url;
+			if(completed && _controller != null && _controller.SelectedPrinter !=null)
+			_printerURL = _controller.SelectedPrinter.Url;
 		}
 
 	}
@@ -138,7 +134,6 @@ namespace IOSService
 
 		public void ProcessRequest()
 		{
-			//string msg = context.Request.HttpMethod + " " + context.Request.Url;
 			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/MakesUppercase") {
 				string text;
 				using (var reader = new StreamReader(context.Request.InputStream,
@@ -189,8 +184,9 @@ namespace IOSService
 				}
 
 			}
-
-
+			if (context.Request.Url.AbsolutePath == "/IsAlive") {
+				SendResponce ("Yes Im Alive");
+			}
 		}
 
 		private void PrintBT(string text)
@@ -198,21 +194,36 @@ namespace IOSService
 			var manager = EAAccessoryManager.SharedAccessoryManager;
 			var starPrinter = manager.ConnectedAccessories.FirstOrDefault (p => p.Name.IndexOf ("Star") >= 0); // this does find the EAAccessory correctly
 
-			var session = new EASession (starPrinter, starPrinter.ProtocolStrings [0]); // the second parameter resolves to "jp.star-m.starpro"
-			session.OutputStream.Schedule (NSRunLoop.Current, "kCFRunLoopDefaultMode"); 
-			session.OutputStream.Open ();
+			if (starPrinter == null) {
+				SendResponce ("CantFind Star Printer");
+				return;
+			}
 
-			byte[] toSend = Encoding.UTF8.GetBytes("something");
+			var session = new EASession (starPrinter, starPrinter.ProtocolStrings [0]); // the second parameter resolves to "jp.star-m.starpro"
+			session.OutputStream.Open (); //WORKAROUND HACK:https://forums.xamarin.com/discussion/50712/ios9-easession
+			session.OutputStream.Schedule (NSRunLoop.Main,/*Current*/ NSRunLoop.NSDefaultRunLoopMode); 
+			session.OutputStream.Open (); 
+
+
+			byte[] toSend = Encoding.UTF8.GetBytes(text); // short text
 
 			if (session.OutputStream.HasSpaceAvailable()) {
-				nint bytesWritten = session.OutputStream.Write (toSend, 0, (nuint)toSend.Length);  
+				nint bytesWritten = session.OutputStream.Write (toSend, (nuint)toSend.Length);  
 				if (bytesWritten < 0) { 
 					System.Diagnostics.Debug.WriteLine ("ERROR WRITING DATA"); 
 				} else {
 					System.Diagnostics.Debug.WriteLine("Some data written, ignoring the rest, just a test");
 				} 
 			} else
+			{
+				NSRunLoop.Main.RunUntil(NSDate.FromTimeIntervalSinceNow(0.5));
 				System.Diagnostics.Debug.WriteLine ("NO SPACE"); // THIS ALWAYS PRINTS, the output stream is never ready to take any output
+			}
+			session.OutputStream.Close ();
+			session.OutputStream.Dispose ();
+			session.InputStream.Close ();
+			session.InputStream.Dispose ();
+			session.Dispose ();
 		}
 
 		private void MakesUppercase(string text)
@@ -241,6 +252,8 @@ namespace IOSService
 					printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
 
 				}
+			} else {
+				SendResponce ("No printer");
 			}
 		}
 

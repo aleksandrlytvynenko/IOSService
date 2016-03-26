@@ -30,16 +30,6 @@ namespace IOSService
 			instance.SetActive(true, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation, out error);
 			return true;
 		}
-
-		public override void PerformFetch (UIApplication application, System.Action<UIBackgroundFetchResult> completionHandler)
-		{
-			completionHandler (UIBackgroundFetchResult.NewData);
-		}
-
-		public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, System.Action<UIBackgroundFetchResult> completionHandler)
-		{
-			completionHandler (UIBackgroundFetchResult.NewData);
-		}
 	}
 }
 

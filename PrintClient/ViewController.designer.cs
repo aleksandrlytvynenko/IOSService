@@ -16,6 +16,10 @@ namespace PrintClient
 	{
 		[Outlet]
 		[GeneratedCode ("iOS Designer", "1.0")]
+		UIActivityIndicatorView _activityIndicator { get; set; }
+
+		[Outlet]
+		[GeneratedCode ("iOS Designer", "1.0")]
 		UIButton _btPrint { get; set; }
 
 		[Outlet]
@@ -40,6 +44,10 @@ namespace PrintClient
 
 		void ReleaseDesignerOutlets ()
 		{
+			if (_activityIndicator != null) {
+				_activityIndicator.Dispose ();
+				_activityIndicator = null;
+			}
 			if (_btPrint != null) {
 				_btPrint.Dispose ();
 				_btPrint = null;

@@ -74,7 +74,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchProfiling>true</MtouchProfiling>
-    <CodesignProvision>a466c6a5-f2d9-4d94-86b8-2d70dd2c9ab5</CodesignProvision>
+    <CodesignProvision>bc7f2f05-3e4a-4328-91c3-94ac58b267c9</CodesignProvision>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -103,8 +103,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
-    <Content Include="sample.m4v" />
     <Content Include="test.mp3" />
-    <Content Include="test2.mp3" />
+    <Content Include="30.mp3" />
   </ItemGroup>
 </Project>
