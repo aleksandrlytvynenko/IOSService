@@ -25,6 +25,8 @@ namespace IOSService
 		NSUrl _printerURL;
 		HttpListener _listener;
 
+
+
 		public ViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -124,6 +126,10 @@ namespace IOSService
 	}
 	class Worker
 	{
+		const string _makeUppercase = "/Uppercase";
+		const string _printWifi = "/PrintWiFi";
+		const string _printBT = "/PrintBT";
+
 		private HttpListenerContext context;
 		NSUrl printerUrl;
 		public Worker(HttpListenerContext context, NSUrl printerUrl)
@@ -134,22 +140,24 @@ namespace IOSService
 
 		public void ProcessRequest()
 		{
-			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/MakesUppercase") {
+			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == _makeUppercase) {
 				string text;
 				using (var reader = new StreamReader(context.Request.InputStream,
 					context.Request.ContentEncoding))
 				{
-					text = reader.ReadToEnd();
+					
+					text = reader.EndOfStream ? "NULL" : reader.ReadToEnd();
 				}
+
 				Console.WriteLine(text);
-				MakesUppercase (text);
+				Uppercase (text);
 			}
-			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/PrintWiFi") {
+			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == _printWifi) {
 				string text;
 				using (var reader = new StreamReader(context.Request.InputStream,
 					context.Request.ContentEncoding))
 				{
-					text = reader.ReadToEnd();
+					text = reader.EndOfStream ? "NULL" : reader.ReadToEnd();
 				}
 				Console.WriteLine(text);
 				using (var pool = new NSAutoreleasePool ()) {
@@ -164,12 +172,12 @@ namespace IOSService
 				}
 
 			}
-			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/PrintBT") {
+			if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == _printBT) {
 				string text;
 				using (var reader = new StreamReader(context.Request.InputStream,
 					context.Request.ContentEncoding))
 				{
-					text = reader.ReadToEnd();
+					text = reader.EndOfStream ? "NULL" : reader.ReadToEnd();
 				}
 				Console.WriteLine(text);
 				using (var pool = new NSAutoreleasePool ()) {
@@ -185,7 +193,7 @@ namespace IOSService
 
 			}
 			if (context.Request.Url.AbsolutePath == "/IsAlive") {
-				SendResponce ("Yes Im Alive");
+				SendResponce ("Yes, I`m Alive");
 			}
 		}
 
@@ -195,7 +203,7 @@ namespace IOSService
 			var starPrinter = manager.ConnectedAccessories.FirstOrDefault (p => p.Name.IndexOf ("Star") >= 0); // this does find the EAAccessory correctly
 
 			if (starPrinter == null) {
-				SendResponce ("CantFind Star Printer");
+				SendResponce ("Cant Find Star Printer");
 				return;
 			}
 
@@ -217,7 +225,7 @@ namespace IOSService
 			} else
 			{
 				NSRunLoop.Main.RunUntil(NSDate.FromTimeIntervalSinceNow(0.5));
-				System.Diagnostics.Debug.WriteLine ("NO SPACE"); // THIS ALWAYS PRINTS, the output stream is never ready to take any output
+				System.Diagnostics.Debug.WriteLine ("NO SPACE");
 			}
 			session.OutputStream.Close ();
 			session.OutputStream.Dispose ();
@@ -226,7 +234,7 @@ namespace IOSService
 			session.Dispose ();
 		}
 
-		private void MakesUppercase(string text)
+		private void Uppercase(string text)
 		{
 			SendResponce (text.ToUpper());
 		}

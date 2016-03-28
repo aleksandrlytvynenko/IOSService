@@ -10,9 +10,9 @@ namespace PrintClient
 {
 	public partial class ViewController : UIViewController
 	{
-		string _makeUppercase = "/MakesUppercase";
-		string _printWifi = "/PrintWiFi";
-		string _printBT = "/PrintBT";
+		const string _makeUppercase = "/Uppercase";
+		const string _printWifi = "/PrintWiFi";
+		const string _printBT = "/PrintBT";
 
 
 		private void IsLoading (bool value)
