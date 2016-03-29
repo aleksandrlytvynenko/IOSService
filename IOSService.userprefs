@@ -1,20 +1,12 @@
 ﻿<Properties StartupItem="PrintClient/PrintClient.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|iPhone" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneDeviceTarget.iPhone (Alex)" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|iPhoneSimulator" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneSimulatorTarget.IPad2.9.2" />
   <MonoDevelop.Ide.Workbench ActiveDocument="IOSService/ViewController.cs">
     <Files>
       <File FileName="IOSService/AppDelegate.cs" Line="1" Column="1" />
-      <File FileName="IOSService/ViewController.designer.cs" Line="1" Column="1" />
-      <File FileName="IOSService/ViewController.cs" Line="91" Column="17" />
+      <File FileName="IOSService/ViewController.cs" Line="160" Column="1" />
+      <File FileName="PrintClient/ViewController.cs" Line="22" Column="12" />
+      <File FileName="PrintClient/Main.cs" Line="1" Column="1" />
     </Files>
-    <Pads>
-      <Pad Id="ProjectPad">
-        <State name="__root__">
-          <Node name="IOSService" expanded="True">
-            <Node name="IOSService" expanded="True" selected="True" />
-          </Node>
-        </State>
-      </Pad>
-    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />

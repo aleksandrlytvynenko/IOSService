@@ -23,7 +23,7 @@ namespace IOSService
 		AVAudioPlayer _player;
 		NSUrl _asset;
 		UIPrinterPickerController _controller;
-		NSUrl _printerURL;
+		UIPrinter _printerURL;
 		HttpListener _listener;
 
 
@@ -38,9 +38,12 @@ namespace IOSService
 			InitPlayer ();
 			GetIP ();
 			InitListener ();
-			//SetupDefaultWiFiPrinter ();
 
-			NSTimer.CreateScheduledTimer (TimeSpan.FromSeconds(0.1), (obj) => SetupDefaultWiFiPrinter()); //HACK
+			if(UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad)
+			NSTimer.CreateScheduledTimer (TimeSpan.FromSeconds(0.1), (obj) => BeginInvokeOnMainThread(()=> SetupDefaultWiFiPrinter())); //HACK
+			else
+				SetupDefaultWiFiPrinter ();
+
 
 //			var button = new UIButton (new CGRect(50,50,250,300));
 //			button.SetTitle ("Stop", UIControlState.Normal);
@@ -116,9 +119,9 @@ namespace IOSService
 		}
 		private void SetupDefaultWiFiPrinter()
 		{
-			_controller = new UIPrinterPickerControllerWrapper ();
+			_controller = UIPrinterPickerControllerWrapper.FromPrinter(null);
 			if (_controller != null) {
-				_controller.Delegate = new UIPrinterPickerControllerDelegateWrapper (this);
+				_controller.Delegate = new UIPrinterPickerControllerDelegate ();
 
 				var defaultPrinter = _controller.SelectedPrinter;
 				if (defaultPrinter == null) {
@@ -141,7 +144,7 @@ namespace IOSService
 		void UIPrintInteractionCompletionHan (UIPrinterPickerController printInteractionController,Boolean completed,NSError error)
 		{
 			if(completed && _controller != null && _controller.SelectedPrinter !=null)
-			_printerURL = _controller.SelectedPrinter.Url;
+			_printerURL = _controller.SelectedPrinter;
 		}
 
 
@@ -153,8 +156,8 @@ namespace IOSService
 		const string _printBT = "/PrintBT";
 
 		private HttpListenerContext context;
-		NSUrl printerUrl;
-		public Worker(HttpListenerContext context, NSUrl printerUrl)
+		UIPrinter printerUrl;
+		public Worker(HttpListenerContext context, UIPrinter printerUrl)
 		{
 			this.context = context;
 			this.printerUrl = printerUrl;
@@ -276,11 +279,19 @@ namespace IOSService
 			var printer = UIPrintInteractionController.SharedPrintController;
 			printer.PrintInfo = printInfo;
 			printer.PrintFormatter = textFormatter;
-			if (printerUrl != null) {
-				var defaultPrinter = UIPrinter.FromUrl (printerUrl);
-				if (defaultPrinter != null) {
-					printer.PrintToPrinter (defaultPrinter, UIPrintInteractionCompletionHandler);
+			printer.ShowsPageRange = true;
+//			printer.Present (true, (handler, completed, err) => {
+//				if (!completed && err != null) {
+//					Console.WriteLine ("error");
+//				}
+//			});
 
+			if (printerUrl != null) {
+				var defaultPrinter = (UIPrinter)UIPrinter.FromObject (printerUrl);
+				if (defaultPrinter != null) {
+					//defaultPrinter.ContactPrinter((available) => System.Diagnostics.Debug.WriteLine(available));
+					printer.PrintToPrinter (defaultPrinter,  UIPrintInteractionCompletionHandler);
+						
 				}
 			} else {
 				SendResponce ("No printer");
@@ -291,9 +302,7 @@ namespace IOSService
 		{
 			if(completed)
 				SendResponce ("Printed");
-			else
-				SendResponce ("PrintError");
-
+			Thread.Sleep(1000); //HACK Crash in background mod
 		}
 
 
@@ -314,34 +323,6 @@ namespace IOSService
 			
 		}
 	}
-
-	public class UIPrinterPickerControllerDelegateWrapper : UIPrinterPickerControllerDelegate
-	{
-		UIViewController controller;
-		public UIPrinterPickerControllerDelegateWrapper (UIViewController controller) : base()
-		{
-			this.controller = controller;
-		}
-		public override UIViewController GetParentViewController (UIPrinterPickerController printerPickerController)
-		{
-			return controller;
-		}
-	}
-
-	public class ContentController : UIViewController
-	{
-		public ContentController (NSObject obj) : base()
-		{
-			
-		}
-
-		public override void ViewDidLoad ()
-		{
-			base.ViewDidLoad ();
-		}
-
-		public ContentController (IntPtr handle) : base (handle)
-		{
-		}
-	}
+		
+		
 }
