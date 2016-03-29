@@ -42,6 +42,9 @@
     <CodesignKey>iPhone Distribution: DIATOM ENTERPRISES SIA (R85LWMKMRN)</CodesignKey>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignProvision>770c2089-a016-495d-a11c-bc9599bc82da</CodesignProvision>
+    <BuildIpa>true</BuildIpa>
+    <IpaMetadata>Info.plist</IpaMetadata>
+    <IpaPackageName>com.Diatom.IOSPrintService</IpaPackageName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>

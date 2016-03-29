@@ -14,6 +14,7 @@ using Foundation;
 using CoreMedia;
 using ExternalAccessory;
 using System.Linq;
+using ObjCRuntime;
 
 namespace IOSService
 {
@@ -37,9 +38,23 @@ namespace IOSService
 			InitPlayer ();
 			GetIP ();
 			InitListener ();
-			SetupDefaultWiFiPrinter ();
+			//SetupDefaultWiFiPrinter ();
+
+			NSTimer.CreateScheduledTimer (TimeSpan.FromSeconds(0.1), (obj) => SetupDefaultWiFiPrinter()); //HACK
+
+//			var button = new UIButton (new CGRect(50,50,250,300));
+//			button.SetTitle ("Stop", UIControlState.Normal);
+//			button.BackgroundColor = UIColor.Gray;
+//			button.TouchUpInside += ButtonTouchUpInside;
+//			this.View.AddSubview (button);
+
 
 		}
+
+//		void ButtonTouchUpInside (object sender, EventArgs e)
+//		{
+//			SetupDefaultWiFiPrinter ();
+//		}
 		void InitPlayer()
 		{
 			_asset = (NSUrl.FromFilename ("30.mp3"));
@@ -103,11 +118,17 @@ namespace IOSService
 		{
 			_controller = new UIPrinterPickerControllerWrapper ();
 			if (_controller != null) {
-				_controller.Delegate = new UIPrinterPickerControllerDelegate ();
+				_controller.Delegate = new UIPrinterPickerControllerDelegateWrapper (this);
 
 				var defaultPrinter = _controller.SelectedPrinter;
 				if (defaultPrinter == null) {
-					_controller.Present (true, UIPrintInteractionCompletionHan);
+					if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
+
+						_controller.PresentFromRect (new CGRect(200,200,200,200), this.View, false, UIPrintInteractionCompletionHan);
+
+					} else {
+						_controller.Present (true, UIPrintInteractionCompletionHan);
+					}
 				}
 			}
 		}
@@ -122,6 +143,7 @@ namespace IOSService
 			if(completed && _controller != null && _controller.SelectedPrinter !=null)
 			_printerURL = _controller.SelectedPrinter.Url;
 		}
+
 
 	}
 	class Worker
@@ -290,6 +312,36 @@ namespace IOSService
 		public UIPrinterPickerControllerWrapper () : base(NSObjectFlag.Empty)
 		{
 			
+		}
+	}
+
+	public class UIPrinterPickerControllerDelegateWrapper : UIPrinterPickerControllerDelegate
+	{
+		UIViewController controller;
+		public UIPrinterPickerControllerDelegateWrapper (UIViewController controller) : base()
+		{
+			this.controller = controller;
+		}
+		public override UIViewController GetParentViewController (UIPrinterPickerController printerPickerController)
+		{
+			return controller;
+		}
+	}
+
+	public class ContentController : UIViewController
+	{
+		public ContentController (NSObject obj) : base()
+		{
+			
+		}
+
+		public override void ViewDidLoad ()
+		{
+			base.ViewDidLoad ();
+		}
+
+		public ContentController (IntPtr handle) : base (handle)
+		{
 		}
 	}
 }
